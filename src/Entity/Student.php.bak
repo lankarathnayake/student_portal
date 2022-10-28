@@ -1,0 +1,134 @@
+<?php
+
+namespace App\Entity;
+
+use App\Repository\StudentRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Mapping\ClassMetadata;
+use Symfony\Component\Validator\Constraints as Assert;
+
+#[ORM\Entity(repositoryClass: StudentRepository::class)]
+class Student
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 50)]
+    private ?string $initials = null;
+
+    #[ORM\Column(length: 30)]
+    private ?string $first_name = null;
+
+    #[ORM\Column(length: 50)]
+    private ?string $last_name = null;
+
+    #[ORM\OneToMany(mappedBy: 'student', targetEntity: SubjectGrade::class)]
+    private Collection $subjectGrades;
+
+    #[ORM\Column(length: 255)]
+    private ?string $registration_id = null;
+
+    public function __construct()
+    {
+        $this->subjectGrades = new ArrayCollection();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getInitials(): ?string
+    {
+        return $this->initials;
+    }
+
+    public function setInitials(string $initials): self
+    {
+        $this->initials = $initials;
+
+        return $this;
+    }
+
+    public function getFirstName(): ?string
+    {
+        return $this->first_name;
+    }
+
+    public function setFirstName(string $first_name): self
+    {
+        $this->first_name = $first_name;
+
+        return $this;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->last_name;
+    }
+
+    public function setLastName(string $last_name): self
+    {
+        $this->last_name = $last_name;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SubjectGrade>
+     */
+    public function getSubjectGrades(): Collection
+    {
+        return $this->subjectGrades;
+    }
+
+    public function addSubjectGrade(SubjectGrade $subjectGrade): self
+    {
+        if (!$this->subjectGrades->contains($subjectGrade)) {
+            $this->subjectGrades->add($subjectGrade);
+            $subjectGrade->setStudent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSubjectGrade(SubjectGrade $subjectGrade): self
+    {
+        if ($this->subjectGrades->removeElement($subjectGrade)) {
+            // set the owning side to null (unless already changed)
+            if ($subjectGrade->getStudent() === $this) {
+                $subjectGrade->setStudent(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getRegistrationId(): ?string
+    {
+        return $this->registration_id;
+    }
+
+    public function setRegistrationId(string $registration_id): self
+    {
+        $this->registration_id = $registration_id;
+
+        return $this;
+    }
+	
+    public static function loadValidatorMetadata(ClassMetadata $metadata)
+    {
+        $metadata->addPropertyConstraint('first_name', new NotBlank());
+        $metadata->addPropertyConstraint('last_name', new NotBlank());
+        $metadata->addPropertyConstraint('initials', new NotBlank());
+		
+        $metadata->addConstraint(new UniqueEntity([
+            'fields' => 'registration_id',
+        ]));
+    }
+}
